@@ -1,9 +1,8 @@
 package com.example.android.carsdbroom
 
-import Data.DatabaseHandler
+import Data.CarsAppDatabase
 import Model.Car
 import android.content.DialogInterface
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.LayoutInflater
@@ -11,26 +10,33 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.Room
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
+@Suppress("SENSELESS_COMPARISON")
 class MainActivity : AppCompatActivity() {
 
-    lateinit var carsAdapter : CarsAdapter
+    private lateinit var carsAdapter : CarsAdapter
     private val cars : MutableList<Car> = ArrayList()
-    lateinit var recyclerView : RecyclerView
-    lateinit var dbHandler : DatabaseHandler
+    private lateinit var recyclerView : RecyclerView
+//    private lateinit var dbHandler : DatabaseHandler
+    private lateinit var carsAppDatabase: CarsAppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         recyclerView = findViewById(R.id.recyclerView)
-        dbHandler = DatabaseHandler(this)
+//        dbHandler = DatabaseHandler(this)
+        carsAppDatabase = Room.databaseBuilder(applicationContext,
+            CarsAppDatabase::class.java, "CarsBD").allowMainThreadQueries().build()
 
-        cars.addAll(dbHandler.getAllCars())
+//        cars.addAll(dbHandler.getAllCars())
+        cars.addAll(carsAppDatabase.getCarDAO().getAllCars())
 
         carsAdapter = CarsAdapter(this, cars, this@MainActivity)
         val layoutManager = LinearLayoutManager(applicationContext)
@@ -92,21 +98,26 @@ class MainActivity : AppCompatActivity() {
 
     private fun deleteCar(car: Car?, position: Int) {
         cars.removeAt(position)
-        dbHandler.deleteCar(car!!)
+//        dbHandler.deleteCar(car!!)
+        carsAppDatabase.getCarDAO().deleteCar(car!!)
         carsAdapter.notifyDataSetChanged()
+
     }
 
     private fun updateCar(name : String, price : String, position: Int) {
         val car = cars[position]
         car.name = name
         car.price = price
-        dbHandler.updateCar(car)
+//        dbHandler.updateCar(car)
+        carsAppDatabase.getCarDAO().updateCar(car)
         carsAdapter.notifyDataSetChanged()
     }
 
     private fun createCar(name: String, price: String) {
-        val id = dbHandler.insertCar(name, price)
-        val car = dbHandler.getCar(id)
+//        val id = dbHandler.insertCar(name, price)
+//        val car = dbHandler.getCar(id)
+        val id = carsAppDatabase.getCarDAO().addCar(Car(0, name, price))
+        val car = carsAppDatabase.getCarDAO().getCar(id)
         if (car != null) {
             cars.add(0, car)
             carsAdapter.notifyDataSetChanged()
